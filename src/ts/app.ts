@@ -15,18 +15,27 @@ const renderTransactions = () => {
     $transactionList.innerHTML = ''; 
     ALL_TRANSACTIONS.forEach((transaction: Transaction) => {
         const li = document.createElement('li');
-        li.className = "list-group-item flex items-center justify-between";
+        li.className = "list-group-item flex items-center justify-between mb-4"; 
         li.innerHTML = `
-            <div>
-                <div class="font-bold">${transaction.transactionName}</div>
-                <div class="text-sm text-gray-600">${transaction.transactionType || 'Type yo\'q'}</div>
+           <div class="flex items-center justify-between p-6 align-middle shadow-md w-full rounded-lg h-auto bg-white"> <!-- фоновый цвет для блока -->
+            <div class="flex flex-col">
+                <div class="text-xl text-gray-700 font-bold">${transaction.transactionType || 'Тип не указан'}</div>
+                <div class="text-lg text-gray-500 ml-2">${transaction.transactionName}</div>
             </div>
-            <div class="font-bold">${transaction.transactionAmount} UZS</div>
+            <div class="text-right">
+                <div class="font-bold text-lg text-green-600">${transaction.transactionAmount} UZS</div> <!-- цвет для суммы -->
+                <div class="text-sm text-gray-400">${new Date(transaction.date).toLocaleTimeString()}</div>
+                <div class="flex space-x-4 mt-2">
+                    <button class="text-blue-500 hover:text-blue-700 font-semibold border border-blue-500 px-2 py-1 rounded">Edit</button>
+                    <button class="text-red-500 hover:text-red-700 font-semibold border border-red-500 px-2 py-1 rounded">delete</button>
+                </div>
+            </div>
+           </div>
         `;
         $transactionList.appendChild(li); 
-        
     });
 };
+
 
 
 const getCurrentQuery = () => {
