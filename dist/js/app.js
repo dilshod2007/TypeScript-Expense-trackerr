@@ -1,37 +1,61 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const $overlay = document.querySelector("#overlay");
-const $modal = document.querySelector("#modal");
+// const $modal = document.querySelector("#modal") as HTMLDivElement;
 const $incomeBtn = document.querySelector("#incomeBtn");
 const $expenseBtn = document.querySelector("#expenseBtn");
 const $closeBtn = document.querySelector("#closeBtn");
 const $transactionForm = document.querySelector("#transactionForm");
-const $alertError = document.querySelector("#alertError");
+// const $alertError = document.querySelector("#alertError") as HTMLDivElement;
 const $transactionList = document.querySelector("#transactionList");
+const $displayIncome = document.querySelector("#displayIncome");
+const $displayExpense = document.querySelector("#displayExpense");
+String.prototype.separateCurrency = function () {
+    return this.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
 const url = new URL(location.href);
-let ALL_TRANSACTIONS = JSON.parse(localStorage.getItem("transactions")) || [];
+let INCOMES = JSON.parse(localStorage.getItem("incomes")) || [];
+let EXPENSES = JSON.parse(localStorage.getItem("expenses")) || [];
 const renderTransactions = () => {
     $transactionList.innerHTML = '';
-    ALL_TRANSACTIONS.forEach((transaction) => {
+    EXPENSES.forEach((transaction) => {
         const li = document.createElement('li');
         li.className = "list-group-item flex items-center justify-between mb-4";
         li.innerHTML = `
-           <div class="flex items-center justify-between p-6 align-middle shadow-md w-full rounded-lg h-auto bg-white"> <!-- фоновый цвет для блока -->
-            <div class="flex flex-col">
-                <div class="text-xl text-gray-700 font-bold">${transaction.transactionType || 'Тип не указан'}</div>
-                <div class="text-lg text-gray-500 ml-2">${transaction.transactionName}</div>
-            </div>
-            <div class="text-right">
-                <div class="font-bold text-lg text-green-600">${transaction.transactionAmount} UZS</div> <!-- цвет для суммы -->
-                <div class="text-sm text-gray-400">${new Date(transaction.date).toLocaleTimeString()}</div>
-                <div class="flex space-x-4 mt-2">
-                    <button class="text-blue-500 hover:text-blue-700 font-semibold border border-blue-500 px-2 py-1 rounded">Edit</button>
-                    <button class="text-red-500 hover:text-red-700 font-semibold border border-red-500 px-2 py-1 rounded">delete</button>
+            <div class="flex items-center justify-between p-6 align-middle shadow-md w-full rounded-lg h-auto bg-white">
+                <div class="flex flex-col">
+                    <div class="text-xl text-gray-700 font-bold">${transaction.transactionType || 'Тип не указан'}</div>
+                    <div class="text-lg text-gray-500 ml-2">${transaction.transactionName}</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-bold text-lg text-green-600">${transaction.transactionAmount} UZS</div>
+                    <div class="text-sm text-gray-400">${new Date(transaction.date).toLocaleTimeString()}</div>
+                    <div class="flex space-x-4 mt-2">
+                        <button class="text-blue-500 hover:text-blue-700 font-semibold border border-blue-500 px-2 py-1 rounded">Edit</button>
+                        <button class="text-red-500 hover:text-red-700 font-semibold border border-red-500 px-2 py-1 rounded  " onclick="deleteTransaction(${transaction.date})">Delete</button>
+                    </div>
                 </div>
             </div>
-           </div>
-        `;
+            `;
+        li.addEventListener("click", (event) => {
+            if (event.target.classList.contains("text-blue-500 hover:text-blue-700")) {
+                $transactionList.appendChild(li);
+            }
+        });
         $transactionList.appendChild(li);
     });
+};
+const deleteTransaction = (timestamp) => {
+    if (getCurrentQuery() === "income") {
+        INCOMES = INCOMES.filter((income) => income.date !== timestamp);
+        localStorage.setItem("incomes", JSON.stringify(INCOMES));
+    }
+    else {
+        EXPENSES = EXPENSES.filter((expense) => expense.date !== timestamp);
+        localStorage.setItem("expenses", JSON.stringify(EXPENSES));
+    }
+    renderTransactions();
+    checkBalance();
 };
 const getCurrentQuery = () => {
     return new URLSearchParams(location.search).get('modal') || "";
@@ -67,13 +91,6 @@ class Transaction {
 }
 const createNewTransaction = (e) => {
     e.preventDefault();
-    let timeOut;
-    function showToast() {
-        $alertError.classList.remove("hidden");
-        timeOut = setTimeout(() => {
-            $alertError.classList.add("hidden");
-        }, 3000);
-    }
     const inputs = Array.from($transactionForm.querySelectorAll("input, select"));
     const values = inputs.map((input) => {
         if (input.type === "number") {
@@ -81,19 +98,33 @@ const createNewTransaction = (e) => {
         }
         return input.value ? input.value : undefined;
     });
-    if (values.every((value) => (typeof value === "string" ? value?.trim().length > 0 : value && value > 0))) {
+    if (values.slice(0, getCurrentQuery() === "income" ? -1 : undefined).every((value) => (typeof value === "string" ? value?.trim().length > 0 : value && value > 0))) {
         const newTransaction = new Transaction(...values, getCurrentQuery());
-        ALL_TRANSACTIONS.push(newTransaction);
-        localStorage.setItem("transactions", JSON.stringify(ALL_TRANSACTIONS));
-        renderTransactions();
+        if (getCurrentQuery() === "income") {
+            INCOMES.push(newTransaction);
+            localStorage.setItem("incomes", JSON.stringify(INCOMES));
+        }
+        else {
+            EXPENSES.push(newTransaction);
+            localStorage.setItem("expenses", JSON.stringify(EXPENSES));
+        }
         window.history.pushState({ path: location.href.split("?")[0] }, "", location.href.split("?")[0]);
         checkModalOpen();
+        inputs.forEach((input) => input.value = "");
+        renderTransactions();
+        checkBalance();
     }
     else {
-        clearTimeout(timeOut);
-        showToast();
+        alert("Please fill in all fields");
     }
 };
+const checkBalance = () => {
+    const totalIncome = INCOMES.reduce((acc, nextIncome) => acc + nextIncome.transactionAmount, 0);
+    const totalExpense = EXPENSES.reduce((acc, nextIncome) => acc + nextIncome.transactionAmount, 0);
+    $displayExpense.innerHTML = `${totalExpense.toString().separateCurrency()} UZS`;
+    $displayIncome.innerHTML = `${(totalIncome - totalExpense).toString().separateCurrency()} UZS`;
+};
+checkBalance();
 $incomeBtn.addEventListener("click", () => {
     url.searchParams.set("modal", "income");
     window.history.pushState({ path: location.href.split("?")[0] + "?" + url.searchParams }, "", location.href.split("?")[0] + "?" + url.searchParams);
