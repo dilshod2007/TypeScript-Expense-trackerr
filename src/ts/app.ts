@@ -113,7 +113,76 @@
             this.date = new Date().getTime();
         }
     }
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const checkBalance = () => {
+       totalIncome = INCOMES.reduce((acc: number, nextIncome: Tincome) => acc + nextIncome.transactionAmount, 0);
+        totalExpense = EXPENSES.reduce((acc: number, nextIncome: Tincome) => acc + nextIncome.transactionAmount, 0);
+        $displayExpense.innerHTML = `${totalExpense.toString().separateCurrency()} UZS`;
+        $displayIncome.innerHTML = `${(totalIncome - totalExpense).toString().separateCurrency()} UZS`;
 
+    }
+
+    checkBalance();
+    const rendeChart = () => {
+        (document.querySelector("#chartWrapper") as HTMLDivElement).innerHTML = `<canvas id="transactionChart"></canvas>`;
+        
+        const $transactionChart = document.querySelector("#transactionChart") as HTMLCanvasElement;
+    
+        let deleyed: boolean = false;
+        // @ts-ignore
+        new Chart($transactionChart, {
+            type: 'pie',
+            data: {
+                datasets: [{
+                    label: 'Data for Income and Expense',
+                    data: [totalIncome, totalExpense],
+                    borderWidth: 3,
+                    backgroundColor: ["green", "red"],  
+                }],
+                labels: ['Income', 'Expense'],
+            },
+            options: {
+                layout: {
+                    padding: {
+                        top: 20, 
+                        bottom: 20 
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        align: 'center', 
+                        labels: {
+                            boxWidth: 20, 
+                            padding: 15 
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false, 
+                animation: {
+                    onComplete: () => {
+                        deleyed = true;
+                    },
+                    // @ts-ignore
+                    delay: (context) => {
+                        let delay = 0;
+                        if (context.type === 'data' && context.mode === 'default' && !deleyed) {
+                            delay = context.dataIndex * 300 + context.datasetIndex * 100;
+                        }
+                        return delay;
+                    },
+                },
+            },
+        });
+    };
+    
+    
+
+    rendeChart();
+    
     const createNewTransaction = (e: Event) => {
         e.preventDefault();
         const inputs = Array.from($transactionForm.querySelectorAll("input, select")) as HTMLInputElement[];
@@ -141,20 +210,13 @@
             inputs.forEach((input: HTMLInputElement) => input.value = "");
             renderTransactions();
             checkBalance();
+            rendeChart();
         } 
         else {
             alert("Please fill in all fields");
         } 
     }
-    const checkBalance = () => {
-        const totalIncome = INCOMES.reduce((acc: number, nextIncome: Tincome) => acc + nextIncome.transactionAmount, 0);
-        const totalExpense = EXPENSES.reduce((acc: number, nextIncome: Tincome) => acc + nextIncome.transactionAmount, 0);
-        $displayExpense.innerHTML = `${totalExpense.toString().separateCurrency()} UZS`;
-        $displayIncome.innerHTML = `${(totalIncome - totalExpense).toString().separateCurrency()} UZS`;
-
-    }
-
-    checkBalance();
+   
 
     $incomeBtn.addEventListener("click", () => {
         url.searchParams.set("modal", "income");
