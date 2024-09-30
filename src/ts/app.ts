@@ -49,7 +49,6 @@
                     <div class="font-bold text-lg text-green-600">${transaction.transactionAmount} UZS</div>
                     <div class="text-sm text-gray-400">${new Date(transaction.date).toLocaleTimeString()}</div>
                     <div class="flex space-x-4 mt-2">
-                        <button class="text-blue-500 hover:text-blue-700 font-semibold border border-blue-500 px-2 py-1 rounded">Edit</button>
                         <button class="text-red-500 hover:text-red-700 font-semibold border border-red-500 px-2 py-1 rounded  " onclick="deleteTransaction(${transaction.date})">Delete</button>
                     </div>
                 </div>
