@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const $overlay = document.querySelector("#overlay");
-// const $modal = document.querySelector("#modal") as HTMLDivElement;
+const $modal = document.querySelector("#modal");
 const $incomeBtn = document.querySelector("#incomeBtn");
 const $expenseBtn = document.querySelector("#expenseBtn");
 const $closeBtn = document.querySelector("#closeBtn");
@@ -45,6 +45,64 @@ const renderTransactions = () => {
         $transactionList.appendChild(li);
     });
 };
+const renderTopExpensesChart = () => {
+    if (EXPENSES.length === 0) {
+        console.error("EXPENSES array is empty. No data available for chart.");
+        return;
+    }
+    const topExpenses = [...EXPENSES]
+        .sort((a, b) => b.transactionAmount - a.transactionAmount)
+        .slice(0, 5);
+    if (topExpenses.length === 0) {
+        console.error("No top expenses found.");
+        return;
+    }
+    const labels = topExpenses.map((expense) => expense.transactionName || "Unknown");
+    const data = topExpenses.map((expense) => expense.transactionAmount);
+    console.log("Top 5 Expenses Labels:", labels);
+    console.log("Top 5 Expenses Data:", data);
+    const chartWrapper = document.querySelector("#chartWrapper");
+    if (!chartWrapper) {
+        console.error("#chartWrapper element not found.");
+        return;
+    }
+    chartWrapper.innerHTML = `<canvas id="topExpensesChart"></canvas>`;
+    const $topExpensesChart = document.querySelector("#topExpensesChart");
+    if (!$topExpensesChart) {
+        console.error("#topExpensesChart element not found.");
+        return;
+    }
+    // @ts-ignore
+    new Chart($topExpensesChart, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                    label: 'Top 5 Expenses',
+                    data: data,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                }],
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                },
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+        },
+    });
+};
+renderTopExpensesChart();
 const deleteTransaction = (timestamp) => {
     if (getCurrentQuery() === "income") {
         INCOMES = INCOMES.filter((income) => income.date !== timestamp);

@@ -1,5 +1,5 @@
     const $overlay = document.querySelector("#overlay") as HTMLDivElement;
-    // const $modal = document.querySelector("#modal") as HTMLDivElement;
+    const $modal = document.querySelector("#modal") as HTMLDivElement;
     const $incomeBtn = document.querySelector("#incomeBtn") as HTMLButtonElement;
     const $expenseBtn = document.querySelector("#expenseBtn") as HTMLButtonElement;
     const $closeBtn = document.querySelector("#closeBtn") as HTMLButtonElement;
@@ -65,6 +65,76 @@
             $transactionList.appendChild(li); 
         });
     };
+    const renderTopExpensesChart = () => {
+        if (EXPENSES.length === 0) {
+            console.error("EXPENSES array is empty. No data available for chart.");
+            return;
+        }
+    
+        const topExpenses = [...EXPENSES]
+            .sort((a: Tincome, b: Tincome) => b.transactionAmount - a.transactionAmount)
+            .slice(0, 5); 
+    
+        if (topExpenses.length === 0) {
+            console.error("No top expenses found.");
+            return;
+        }
+    
+        const labels = topExpenses.map((expense: Tincome) => expense.transactionName || "Unknown");
+        const data = topExpenses.map((expense: Tincome) => expense.transactionAmount);
+    
+        console.log("Top 5 Expenses Labels:", labels);
+        console.log("Top 5 Expenses Data:", data);
+    
+        const chartWrapper = document.querySelector("#chartWrapper") as HTMLDivElement;
+        if (!chartWrapper) {
+            console.error("#chartWrapper element not found.");
+            return;
+        }
+    
+        chartWrapper.innerHTML = `<canvas id="topExpensesChart"></canvas>`; 
+        const $topExpensesChart = document.querySelector("#topExpensesChart") as HTMLCanvasElement;
+    
+        if (!$topExpensesChart) {
+            console.error("#topExpensesChart element not found.");
+            return;
+        }
+    
+        // @ts-ignore
+        new Chart($topExpensesChart, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Top 5 Expenses',
+                    data: data,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)', 
+                    borderColor: 'rgba(255, 99, 132, 1)', 
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+            },
+        });
+    };
+    
+    renderTopExpensesChart();
+    
+    
+    
     const deleteTransaction = (timestamp: number) => {
         if (getCurrentQuery() === "income") {
             INCOMES = INCOMES.filter((income: Tincome) => income.date !== timestamp);
